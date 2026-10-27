@@ -1,13 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-plt.ion()
-
-def GeneratorCoChapem(sampleCount: int):
-    # Random podle random 42
+# 4. generovaní - zamítací metoda
+def Generator(sampleCount: int):
     rng = np.random.default_rng(42)
     
-    # Uniformní funkce hustoty
+    # Obálka M.g(x)
     g = 4 / (np.pi**2)
     M = (np.pi**2)/4
     
@@ -21,15 +19,16 @@ def GeneratorCoChapem(sampleCount: int):
     
     return (x,y,z,accepted)
 
+# 4.1. vykreslení generovaných bodů 
 def VykresliGraf(x,y,z,accepted):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    #ax.scatter(x, y, z, c=accepted, cmap='bwr', s=1)
+    ax.scatter(x, y, z, c=accepted, cmap='bwr', s=1)
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
-    ax.legend()
+    
     
     x = np.linspace(0, np.pi / 2, 180)
     y = np.linspace(0, np.pi / 2, 180)
@@ -45,7 +44,13 @@ def VykresliGraf(x,y,z,accepted):
 
     plt.show()
 
+# 5. odhady z vygenerovaných dat
 def SpocitejOdhady(x,y):
+    print("\n" + "=" * 94)
+    print("5. Odhady z generovaných dat")
+    print("=" * 94)
+
+
     EX_teror = (np.pi - 2) / 2
     EY_teror = 1.0
     
@@ -87,9 +92,10 @@ def SpocitejOdhady(x,y):
     print()
     print("Cov:", Cov_real, "vs teoretická:", Cov_teror, "Rozdíl: ", abs(Cov_real - Cov_teror))
     print()
-    print("IS_X:", IS_X_real, "vs IS_Y:", IS_Y_real)
-# Úloha 4
-def v(z_x, z_y):
+    print(f"IS_X: [{IS_X_real[0]:.4f}; {IS_X_real[1]:.4f}] \t IS_Y: [{IS_Y_real[0]:.4f}; {IS_Y_real[1]:.4f}]")
+    
+# 6. Porovnání s teoretickými funkcemi
+def Histogramy(z_x, z_y):
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     grid = np.linspace(0, np.pi / 2, 200)
 
@@ -99,7 +105,7 @@ def v(z_x, z_y):
     axes[0, 0].set_title("Marginální hustota $f_X(x)$")
     axes[0, 0].set_xlabel("$x$")
     axes[0, 0].set_ylabel("Hustota")
-    axes[0, 0].legend()
+    
     axes[0, 0].grid(True, linestyle="--", alpha=0.5)
 
     # (b) Distribuční funkce F_X(x) = sin(x)
@@ -108,7 +114,7 @@ def v(z_x, z_y):
     axes[0, 1].set_title("Marginální distribuční funkce $F_X(x)$")
     axes[0, 1].set_xlabel("$x$")
     axes[0, 1].set_ylabel("$F_X(x)$")
-    axes[0, 1].legend()
+    
     axes[0, 1].grid(True, linestyle="--", alpha=0.5)
 
     # (c) Hustota f_Y(y) = sin(y)
@@ -117,7 +123,7 @@ def v(z_x, z_y):
     axes[1, 0].set_title("Marginální hustota $f_Y(y)$")
     axes[1, 0].set_xlabel("$y$")
     axes[1, 0].set_ylabel("Hustota")
-    axes[1, 0].legend()
+    
     axes[1, 0].grid(True, linestyle="--", alpha=0.5)
 
     # (d) Distribuční funkce F_Y(y) = 1 - cos(y)
@@ -126,83 +132,104 @@ def v(z_x, z_y):
     axes[1, 1].set_title("Marginální distribuční funkce $F_Y(y)$")
     axes[1, 1].set_xlabel("$y$")
     axes[1, 1].set_ylabel("$F_Y(y)$")
-    axes[1, 1].legend()
+    
     axes[1, 1].grid(True, linestyle="--", alpha=0.5)
 
     plt.tight_layout()
     plt.savefig("histogramy.pdf")
     plt.show()
-    
+
+# 1. Vykreslení původní funkce f(x,y) = cos(y - x)
+def VykresleniFunkce():
+    grid_res = 200
+    x_lin = np.linspace(0, np.pi / 2, grid_res)
+    y_lin = np.linspace(0, np.pi / 2, grid_res)
+    X, Y = np.meshgrid(x_lin, y_lin)
+    Z = np.where((X >= 0) & (X <= Y) & (Y <= np.pi / 2), np.cos(Y - X), np.nan)
+    fig = plt.figure(figsize=(9, 7))
+    ax = fig.add_subplot(111, projection='3d')
+    surf = ax.plot_surface(
+        X, Y, Z,
+        cmap='viridis',
+        edgecolor='none',
+        alpha=0.9,
+        antialiased=True,
+        rstride=1,
+        cstride=1
+    )
+    ax.contour(X, Y, Z, zdir='z', offset=0, cmap='viridis', levels=8, linewidths=1.2)
+    diag = np.linspace(0, np.pi / 2, 100)
+    ax.plot(diag, diag, np.ones_like(diag), color='crimson', linewidth=2, label=r'Maximum: $y = x$ ($f=1$)')
+    ax.set_xlabel('$x$', fontsize=11, labelpad=8)
+    ax.set_ylabel('$y$', fontsize=11, labelpad=8)
+    ax.set_zlabel('$f(x, y)$', fontsize=11, labelpad=8)
+    ax.set_zlim(0, 1.05)
+    ax.view_init(elev=28, azim=-55)
+    cbar = fig.colorbar(surf, ax=ax, shrink=0.55, aspect=12, pad=0.1)
+    cbar.set_label(r'$f(x, y) = \cos(y - x)$', rotation=270, labelpad=15)
+    ax.legend(loc='upper left')
+    plt.title(r'Sdružená hustota pravděpodobnosti na $\Omega$', fontsize=13, pad=15)
+    plt.tight_layout()
+    plt.savefig('graf_funkce.pdf', bbox_inches='tight')
+    plt.show()
+
+# 7. Závislost přesnosti pro n = [100, 1000, 10000, 100000, 1000000]
+def ZavislostOdhadu(x_prijate, y_prijate):
+    ex_teor = (np.pi - 2) / 2
+    ey_teor = 1.0
+    z = 1.96
+
+    print("\n" + "=" * 94)
+    print("7. Závislost odhadu na rozsahu výběru")
+    print("=" * 94)
+    hlavicka = (
+        f"{'n':>7} | {'x_bar':>7} | {'|EX-x|':>8} | {'Sirka IS_X':>10} | "
+        f"{'y_bar':>7} | {'|EY-y|':>8} | {'Sirka IS_Y':>10}"
+    )
+    print(hlavicka)
+    print("-" * len(hlavicka))
+
+    for n in [100, 1000, 10000, 100000, 1000000]:
+        x_sub = x_prijate[:n]
+        y_sub = y_prijate[:n]
+
+        # Výběrové průměry
+        x_bar = np.mean(x_sub)
+        y_bar = np.mean(y_sub)
+
+        # Výběrové směrodatné odchylky (výběrový odhad s ddof=1)
+        sx = np.std(x_sub, ddof=1)
+        sy = np.std(y_sub, ddof=1)
+
+        # Šířky 95% intervalů spolehlivosti (horní mez - dolní mez)
+        sirka_is_x = 2 * z * sx / np.sqrt(n)
+        sirka_is_y = 2 * z * sy / np.sqrt(n)
+
+        # Absolutní odchylky od teorie
+        err_x = abs(ex_teor - x_bar)
+        err_y = abs(ey_teor - y_bar)
+
+        print(
+            f"{n:7d} | {x_bar:7.4f} | {err_x:8.4f} | {sirka_is_x:10.4f} | "
+            f"{y_bar:7.4f} | {err_y:8.4f} | {sirka_is_y:10.4f}"
+        )
+        
 def main():
-    for i in [1_000]:
-        data = GeneratorCoChapem(i)
-        VykresliGraf(*data)
-        x,y,_,accepted = data
-        SpocitejOdhady(x[accepted == 1], y[accepted == 1])
-        v(x[accepted == 1], y[accepted == 1])
+    VykresleniFunkce()
+    # generovaní 3_000_000 pro následné porovnání v bodě 7
+    data = Generator(3_000_000) 
+
+    x,y,z,accepted = data
+
+    # vykreslení přijatých bodů (omezeno na 5000)
+    VykresliGraf(x[:5000], y[:5000], z[:5000], accepted[:5000]) 
+    # odhady z přijatých dat
+    SpocitejOdhady(x[accepted == 1], y[accepted == 1])
+    # vykreslení histogramů
+    Histogramy(x[accepted == 1], y[accepted == 1])
+
+    ZavislostOdhadu(x[accepted == 1], y[accepted == 1])
     
 if __name__ == '__main__':
     main()
-
-# # Inicializace generátoru jako na slajdu
-# rng = np.random.default_rng(42)
-
-# # Konstanta obálky: c_env = plocha čtverce
-# c = (np.pi / 2) ** 2
-# m = 100_000
-
-# # Kandidáti z rovnoměrného 2D rozdělení na [0, pi/2] x [0, pi/2]
-# x = rng.uniform(0, np.pi / 2, size=m)
-# y = rng.uniform(0, np.pi / 2, size=m)
-
-# # Pomocná náhodná čísla z U(0, 1) pro test přijetí
-# v = rng.random(m)
-
-# # Cílová hustota f(x, y) — mimo trojúhelník (x <= y) je rovna 0
-# f = np.where(x <= y, np.cos(y - x), 0.0)
-
-# # Hustota návrhového rozdělení g(x, y) na daném čtverci
-# g = 1.0 / c
-
-# # Podmínka přijetí přesně podle vzorce: v <= f / (c * g)
-# prijato = v <= f / (c * g)
-
-# # Výsledný výběr ze sdruženého rozdělení
-# z_x = x[prijato]
-# z_y = y[prijato]
-
-# # Teoretická pravděpodobnost přijetí je 1 / c = 4 / pi^2 cca 0.405
-# print(prijato.mean())          # ~ 1/c = 0.405
-# print(f"Vygenerováno bodů: {len(z_x)}")
-
-# # Kontrola výběrových průměrů oproti teoretickým hodnotám
-# print("E(X):", np.mean(z_x), "vs teoretická:", (np.pi - 2) / 2)
-# print("E(Y):", np.mean(z_y), "vs teoretická:", 1.0)
-
-
-# plt.figure(figsize=(7, 7))
-
-# # Vykreslení náhodného výběru (zobrazíme např. prvních 5 000 bodů, aby byl graf přehledný)
-# plt.scatter(z_x[:5000], z_y[:5000], alpha=0.3, s=8, color="royalblue", label="Vygenerované body")
-
-# # Ohraničení teoretické oblasti (trojúhelník 0 <= x <= y <= pi/2)
-# t = np.linspace(0, np.pi / 2, 100)
-# plt.plot(t, t, "r--", linewidth=1.5, label=r"Hranice $y = x$")
-# plt.axhline(np.pi / 2, color="crimson", linestyle=":", linewidth=1.5, label=r"$y = \pi/2$")
-# plt.axvline(0, color="gray", linestyle="-", linewidth=0.8)
-
-# plt.title("Sdružené rozdělení $(X, Y)$")
-# plt.xlabel("$x$")
-# plt.ylabel("$y$")
-# plt.xlim(-0.05, np.pi / 2 + 0.05)
-# plt.ylim(-0.05, np.pi / 2 + 0.05)
-# plt.gca().set_aspect("equal", adjustable="box")
-# plt.legend(loc="upper left")
-# plt.grid(True, linestyle="--", alpha=0.5)
-# plt.tight_layout()
-# plt.show()
-
-# # -------------------------------------------------------------
-# # 2. Marginální hustoty a distribuční funkce
-# # -------------------------------------------------------------
 
